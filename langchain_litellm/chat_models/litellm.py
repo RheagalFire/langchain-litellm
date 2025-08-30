@@ -255,7 +255,9 @@ class ChatLiteLLM(BaseChatModel):
     client: Any = None  #: :meta private:
     model: str = "gpt-3.5-turbo"
     model_name: Optional[str] = None
-    stream_options: Optional[Dict[str, Any]] = Field(default_factory=lambda: {"include_usage": True})
+    stream_options: Optional[Dict[str, Any]] = Field(
+        default_factory=lambda: {"include_usage": True}
+    )
     """Model name to use."""
     openai_api_key: Optional[str] = None
     azure_api_key: Optional[str] = None
@@ -471,8 +473,8 @@ class ChatLiteLLM(BaseChatModel):
                 continue
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
-            if usage_metadata:
-                chunk.response_metadata = {"token_usage": usage_metadata}
+            if usage_metadata and isinstance(chunk, AIMessageChunk):
+                chunk.usage_metadata = usage_metadata
 
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(message=chunk)
@@ -503,8 +505,8 @@ class ChatLiteLLM(BaseChatModel):
                 continue
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
-            if usage_metadata:
-                chunk.response_metadata = {"token_usage": usage_metadata}
+            if usage_metadata and isinstance(chunk, AIMessageChunk):
+                chunk.usage_metadata = usage_metadata
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
