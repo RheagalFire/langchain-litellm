@@ -10,7 +10,10 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.messages import (
+    AIMessageChunk,
+    BaseMessage,
+)
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 from langchain_litellm.chat_models.litellm import (
@@ -121,8 +124,8 @@ class ChatLiteLLMRouter(ChatLiteLLM):
                 usage_metadata = _create_usage_metadata(chunk["usage"])
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
-            if usage_metadata:
-                chunk.response_metadata = {"token_usage": usage_metadata}
+            if usage_metadata and isinstance(chunk, AIMessageChunk):
+                chunk.usage_metadata = usage_metadata
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
@@ -152,8 +155,8 @@ class ChatLiteLLMRouter(ChatLiteLLM):
                 usage_metadata = _create_usage_metadata(chunk["usage"])
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
-            if usage_metadata:
-                chunk.response_metadata = {"token_usage": usage_metadata}
+            if usage_metadata and isinstance(chunk, AIMessageChunk):
+                chunk.usage_metadata = usage_metadata
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
