@@ -116,6 +116,7 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         for chunk in self.router.completion(messages=message_dicts, **params):
             if len(chunk["choices"]) == 0:
                 continue
+            usage_metadata = None
             if "usage" in chunk and chunk["usage"]:
                 usage_metadata = _create_usage_metadata(chunk["usage"])
             delta = chunk["choices"][0]["delta"]
@@ -146,6 +147,7 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         ):
             if len(chunk["choices"]) == 0:
                 continue
+            usage_metadata = None
             if "usage" in chunk and chunk["usage"]:
                 usage_metadata = _create_usage_metadata(chunk["usage"])
             delta = chunk["choices"][0]["delta"]
