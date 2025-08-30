@@ -17,6 +17,7 @@ from langchain_litellm.chat_models.litellm import (
     ChatLiteLLM,
     _convert_delta_to_message_chunk,
     _convert_dict_to_message,
+    _create_usage_metadata,
 )
 
 token_usage_key_name = "token_usage"  # nosec # incorrectly flagged as password
@@ -109,13 +110,18 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         default_chunk_class = AIMessageChunk
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        params["stream_options"] = self.stream_options
         self._prepare_params_for_router(params)
 
         for chunk in self.router.completion(messages=message_dicts, **params):
             if len(chunk["choices"]) == 0:
                 continue
+            if "usage" in chunk and chunk["usage"]:
+                usage_metadata = _create_usage_metadata(chunk["usage"])
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            if usage_metadata:
+                chunk.response_metadata = {"token_usage": usage_metadata}
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
@@ -132,6 +138,7 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         default_chunk_class = AIMessageChunk
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        params["stream_options"] = self.stream_options
         self._prepare_params_for_router(params)
 
         async for chunk in await self.router.acompletion(
@@ -139,8 +146,12 @@ class ChatLiteLLMRouter(ChatLiteLLM):
         ):
             if len(chunk["choices"]) == 0:
                 continue
+            if "usage" in chunk and chunk["usage"]:
+                usage_metadata = _create_usage_metadata(chunk["usage"])
             delta = chunk["choices"][0]["delta"]
             chunk = _convert_delta_to_message_chunk(delta, default_chunk_class)
+            if usage_metadata:
+                chunk.response_metadata = {"token_usage": usage_metadata}
             default_chunk_class = chunk.__class__
             cg_chunk = ChatGenerationChunk(message=chunk)
             if run_manager:
